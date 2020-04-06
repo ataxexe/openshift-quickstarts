@@ -42,72 +42,74 @@ import static io.undertow.servlet.Servlets.servlet;
  */
 public class ServletServer {
 
-    public static final String MYAPP = "/";
+  public static final String MYAPP = "/";
 
-    public static void main(final String[] args) {
-        try {
-            String message = System.getenv("MESSAGE");
-            if (message == null) {
-                message = "Hello World";
-            }
-            DeploymentInfo servletBuilder = deployment()
-                    .setClassLoader(ServletServer.class.getClassLoader())
-                    .setContextPath(MYAPP)
-                    .setDeploymentName("test.war")
-                    .addServlets(
-                            servlet("MessageServlet", MessageServlet.class)
-                                    .addInitParam("message", message)
-                                    .addMapping("/*"),
-                            servlet("MyServlet", MessageServlet.class)
-                                    .addInitParam("message", "MyServlet")
-                                    .addMapping("/myservlet"));
+  public static void main(final String[] args) {
+    try {
+      String message = System.getenv("MESSAGE");
+      if (message == null) {
+        message = "Hello World";
+      }
+      String propertiesFile = System.getenv("PROPERTIES_FILE");
+      DeploymentInfo servletBuilder = deployment()
+          .setClassLoader(ServletServer.class.getClassLoader())
+          .setContextPath(MYAPP)
+          .setDeploymentName("test.war")
+          .addServlets(
+              servlet("MessageServlet", MessageServlet.class)
+                  .addInitParam(MessageServlet.MESSAGE, message)
+                  .addInitParam(MessageServlet.PROPERTIES, propertiesFile)
+                  .addMapping("/*"),
+              servlet("MyServlet", MessageServlet.class)
+                  .addInitParam("message", "MyServlet")
+                  .addMapping("/myservlet"));
 
-            DeploymentManager manager = defaultContainer().addDeployment(servletBuilder);
-            manager.deploy();
+      DeploymentManager manager = defaultContainer().addDeployment(servletBuilder);
+      manager.deploy();
 
-            SSLContext sslContext = null;
-            String filename = System.getenv("HTTPS_KEYSTORE");
-            if (filename != null) {
-                String directory = System.getenv("HTTPS_KEYSTORE_DIR");
-                char[] password = System.getenv("HTTPS_PASSWORD").toCharArray();
-                File keystore = new File(directory, filename);
-            
-                sslContext = createSSLContext(loadKeyStore(keystore, password), password);
-            }
-            
-            HttpHandler servletHandler = manager.start();
-            PathHandler path = Handlers.path(Handlers.redirect(MYAPP))
-                    .addPrefixPath(MYAPP, servletHandler);
-            Undertow server = Undertow.builder()
-                    .addHttpListener(8080, "0.0.0.0")
-                    .addHttpsListener(8443, "0.0.0.0", sslContext)
-                    .setHandler(path)
-                    .build();
-            server.start();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+      SSLContext sslContext = null;
+      String filename = System.getenv("HTTPS_KEYSTORE");
+      if (filename != null) {
+        String directory = System.getenv("HTTPS_KEYSTORE_DIR");
+        char[] password = System.getenv("HTTPS_PASSWORD").toCharArray();
+        File keystore = new File(directory, filename);
+
+        sslContext = createSSLContext(loadKeyStore(keystore, password), password);
+      }
+
+      HttpHandler servletHandler = manager.start();
+      PathHandler path = Handlers.path(Handlers.redirect(MYAPP))
+                                 .addPrefixPath(MYAPP, servletHandler);
+      Undertow server = Undertow.builder()
+                                .addHttpListener(8080, "0.0.0.0")
+                                .addHttpsListener(8443, "0.0.0.0", sslContext)
+                                .setHandler(path)
+                                .build();
+      server.start();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
-    
-    private static KeyStore loadKeyStore(File file, char[] password) throws Exception {
-        final InputStream stream = new FileInputStream(file);
-        try(InputStream is = stream) {
-            KeyStore loadedKeystore = KeyStore.getInstance("JKS");
-            loadedKeystore.load(is, password);
-            return loadedKeystore;
-        }
+  }
+
+  private static KeyStore loadKeyStore(File file, char[] password) throws Exception {
+    final InputStream stream = new FileInputStream(file);
+    try (InputStream is = stream) {
+      KeyStore loadedKeystore = KeyStore.getInstance("JKS");
+      loadedKeystore.load(is, password);
+      return loadedKeystore;
     }
+  }
 
-    private static SSLContext createSSLContext(final KeyStore keyStore, final char[] password) throws Exception {
-        KeyManager[] keyManagers;
-        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-        keyManagerFactory.init(keyStore, password);
-        keyManagers = keyManagerFactory.getKeyManagers();
+  private static SSLContext createSSLContext(final KeyStore keyStore, final char[] password) throws Exception {
+    KeyManager[] keyManagers;
+    KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+    keyManagerFactory.init(keyStore, password);
+    keyManagers = keyManagerFactory.getKeyManagers();
 
-        SSLContext sslContext;
-        sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(keyManagers, null, null);
+    SSLContext sslContext;
+    sslContext = SSLContext.getInstance("TLS");
+    sslContext.init(keyManagers, null, null);
 
-        return sslContext;
-    }
+    return sslContext;
+  }
 }
