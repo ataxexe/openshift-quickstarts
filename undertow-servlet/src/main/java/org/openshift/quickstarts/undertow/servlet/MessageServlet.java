@@ -48,13 +48,10 @@ public class MessageServlet extends HttpServlet {
   }
 
   private void load() {
-    if (file != null) {
-      try (FileInputStream inStream = new FileInputStream(file)) {
-        properties.load(inStream);
-        message = properties.getProperty(message);
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
+    try (FileInputStream inStream = new FileInputStream(file)) {
+      properties.load(inStream);
+    } catch (IOException e) {
+      e.printStackTrace();
     }
   }
 
@@ -62,7 +59,7 @@ public class MessageServlet extends HttpServlet {
   protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
     load();
     PrintWriter writer = resp.getWriter();
-    writer.write(message);
+    writer.write(properties.getProperty(message));
     writer.close();
   }
 
