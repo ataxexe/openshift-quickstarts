@@ -37,13 +37,17 @@ public class MessageServlet extends HttpServlet {
   public static final String PROPERTIES = "properties";
 
   private String message;
+  private String file;
   private Properties properties = new Properties();
 
   @Override
   public void init(final ServletConfig config) throws ServletException {
     super.init(config);
     message = config.getInitParameter(MESSAGE);
-    String file = config.getInitParameter(PROPERTIES);
+    file = config.getInitParameter(PROPERTIES);
+  }
+
+  private void load() {
     if (file != null) {
       try (FileInputStream inStream = new FileInputStream(file)) {
         properties.load(inStream);
@@ -56,6 +60,7 @@ public class MessageServlet extends HttpServlet {
 
   @Override
   protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
+    load();
     PrintWriter writer = resp.getWriter();
     writer.write(message);
     writer.close();
