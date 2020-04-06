@@ -18,10 +18,6 @@
 
 package org.openshift.quickstarts.undertow.servlet;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-
 import io.undertow.Handlers;
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
@@ -29,14 +25,17 @@ import io.undertow.server.handlers.PathHandler;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.DeploymentManager;
 
-import static io.undertow.servlet.Servlets.defaultContainer;
-import static io.undertow.servlet.Servlets.deployment;
-import static io.undertow.servlet.Servlets.servlet;
-
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.security.KeyStore;
+
+import static io.undertow.servlet.Servlets.defaultContainer;
+import static io.undertow.servlet.Servlets.deployment;
+import static io.undertow.servlet.Servlets.servlet;
 
 /**
  * @author Stuart Douglas
@@ -47,14 +46,17 @@ public class ServletServer {
 
     public static void main(final String[] args) {
         try {
-
+            String message = System.getenv("MESSAGE");
+            if (message == null) {
+                message = "Hello World";
+            }
             DeploymentInfo servletBuilder = deployment()
                     .setClassLoader(ServletServer.class.getClassLoader())
                     .setContextPath(MYAPP)
                     .setDeploymentName("test.war")
                     .addServlets(
                             servlet("MessageServlet", MessageServlet.class)
-                                    .addInitParam("message", "Hello World")
+                                    .addInitParam("message", message)
                                     .addMapping("/*"),
                             servlet("MyServlet", MessageServlet.class)
                                     .addInitParam("message", "MyServlet")
